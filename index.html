@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMI TermoPredictor</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #ffffff; padding: 20px; }
+        .panel { background-color: #1e1e1e; border-radius: 8px; padding: 20px; margin-top: 20px; border-left: 5px solid #00ff88; }
+        button { background-color: #00ff88; color: #000; border: none; padding: 15px 30px; font-size: 18px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; }
+        .dato { font-family: monospace; color: #00ff88; font-size: 1.2em; display: block; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+    <h2>⚡ Diagnóstico Industrial BLE</h2>
+    <button id="btnConectar">Conectar al Equipo</button>
+
+    <div class="panel">
+        <strong>Sistema IA:</strong>
+        <span class="dato" id="valSistema">Esperando conexión...</span>
+    </div>
+
+    <div class="panel">
+        <strong>Estado de Red:</strong>
+        <span class="dato" id="valRed">Esperando conexión...</span>
+    </div>
+
+    <div class="panel">
+        <strong>Última Transmisión:</strong>
+        <span class="dato" id="valLog">Esperando conexión...</span>
+    </div>
+
+    <script>
+        // Los UUIDs deben estar en minúsculas en JavaScript
+        const SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+        const CHAR_SISTEMA = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+        const CHAR_RED     = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+        const CHAR_LOG     = '6e400004-b5a3-f393-e0a9-e50e24dcca9e';
+
+        document.getElementById('btnConectar').addEventListener('click', async () => {
+            try {
+                // 1. El navegador pide permiso al usuario para usar el Bluetooth
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ name: 'TERMOPREDICTOR' }],
+                    optionalServices: [SERVICE_UUID]
+                });
+
+                document.getElementById('btnConectar').innerText = "Conectando...";
+
+                // 2. Conectar al servidor GATT del Photon 2
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+
+                // 3. Obtener las características (los "renglones")
+                const charSistema = await service.getCharacteristic(CHAR_SISTEMA);
+                const charRed = await service.getCharacteristic(CHAR_RED);
+                const charLog = await service.getCharacteristic(CHAR_LOG);
+
+                // 4. Suscribirse a las notificaciones (Actualización en tiempo real)
+                await charSistema.startNotifications();
+                await charRed.startNotifications();
+                await charLog.startNotifications();
+
+                // 5. Mostrar los datos en la pantalla
+                charSistema.addEventListener('characteristicvaluechanged', (e) => {
+                    document.getElementById('valSistema').innerText = new TextDecoder().decode(e.target.value);
+                });
+                charRed.addEventListener('characteristicvaluechanged', (e) => {
+                    document.getElementById('valRed').innerText = new TextDecoder().decode(e.target.value);
+                });
+                charLog.addEventListener('characteristicvaluechanged', (e) => {
+                    document.getElementById('valLog').innerText = new TextDecoder().decode(e.target.value);
+                });
+
+                // Leer los valores iniciales una vez
+                document.getElementById('valSistema').innerText = new TextDecoder().decode(await charSistema.readValue());
+                document.getElementById('valRed').innerText = new TextDecoder().decode(await charRed.readValue());
+                document.getElementById('valLog').innerText = new TextDecoder().decode(await charLog.readValue());
+
+                document.getElementById('btnConectar').innerText = "Conectado y Monitoreando";
+                document.getElementById('btnConectar').style.backgroundColor = "#555";
+
+            } catch (error) {
+                alert("Error de conexión: " + error);
+                document.getElementById('btnConectar').innerText = "Reintentar Conexión";
+            }
+        });
+    </script>
+</body>
+</html>
