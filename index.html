@@ -12,23 +12,64 @@
             padding: 20px; 
         }
         
-        /* ESTADO POR DEFECTO (STANDBY) */
+        /* CONTENEDOR DE CADA RENGLÓN */
         .panel { 
             background-color: #1e1e1e; 
             border-radius: 8px; 
-            padding: 20px; 
+            padding: 15px 20px; 
             margin-top: 20px; 
-            border-left: 5px solid #555555; 
-            transition: all 0.3s ease;
+            display: flex; /* Alineación horizontal */
+            align-items: center; 
+            border: 1px solid #333;
+        }
+
+        /* DISEÑO DE LOS LEDs CIRCULARES */
+        .led {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            margin-right: 20px;
+            background-color: #333; /* Apagado por defecto */
+            box-shadow: inset 0px 0px 5px #000;
+            flex-shrink: 0;
+        }
+
+        /* ANIMACIONES DE RESPIRACIÓN INDEPENDIENTES */
+        @keyframes latidoVerde {
+            0% { background-color: #00ff88; box-shadow: 0 0 2px #00ff88; }
+            50% { background-color: #008844; box-shadow: 0 0 15px #00ff88; }
+            100% { background-color: #00ff88; box-shadow: 0 0 2px #00ff88; }
+        }
+        @keyframes latidoRojo {
+            0% { background-color: #ff4444; box-shadow: 0 0 2px #ff4444; }
+            50% { background-color: #aa0000; box-shadow: 0 0 15px #ff4444; }
+            100% { background-color: #ff4444; box-shadow: 0 0 2px #ff4444; }
+        }
+        @keyframes latidoAmarillo {
+            0% { background-color: #ffaa00; box-shadow: 0 0 2px #ffaa00; }
+            50% { background-color: #885500; box-shadow: 0 0 15px #ffaa00; }
+            100% { background-color: #ffaa00; box-shadow: 0 0 2px #ffaa00; }
+        }
+
+        /* CLASES PARA ACTIVAR LOS LEDs */
+        .led-verde { animation: latidoVerde 2s infinite ease-in-out; }
+        .led-rojo { animation: latidoRojo 1s infinite ease-in-out; } /* Rojo late más rápido (Alerta) */
+        .led-amarillo { animation: latidoAmarillo 2s infinite ease-in-out; }
+        .led-apagado { animation: none; background-color: #333; box-shadow: inset 0px 0px 5px #000; }
+
+        /* TEXTOS */
+        .info-container {
+            display: flex;
+            flex-direction: column;
         }
         .dato { 
             font-family: monospace; 
-            color: #aaaaaa; 
-            font-size: 1.2em; 
-            display: block; 
-            margin-top: 5px; 
-            transition: color 0.3s;
+            color: #dddddd; 
+            font-size: 1.1em; 
+            margin-top: 4px; 
         }
+
+        /* BOTÓN MAESTRO */
         button { 
             border: none; 
             padding: 15px 30px; 
@@ -40,39 +81,12 @@
             transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 1px;
+            margin-bottom: 10px;
         }
-
-        /* ANIMACIÓN DE RESPIRACIÓN (COMO EL LED DE PARTICLE) */
-        @keyframes respiracionViva {
-            0% { 
-                border-left-color: #00ff88; 
-                box-shadow: -5px 0 15px -5px rgba(0, 255, 136, 0.1); 
-            }
-            50% { 
-                border-left-color: #006633; 
-                box-shadow: -5px 0 25px -5px rgba(0, 255, 136, 0.6); 
-            }
-            100% { 
-                border-left-color: #00ff88; 
-                box-shadow: -5px 0 15px -5px rgba(0, 255, 136, 0.1); 
-            }
-        }
-
-        /* CLASES DINÁMICAS PARA LOS BOTONES */
         .btn-standby { background-color: #444444; color: #ffffff; }
         .btn-conectando { background-color: #00aaff; color: #ffffff; cursor: wait; }
         .btn-desconectar { background-color: #2a2a2a; color: #ff4444; border: 1px solid #ff4444; }
-        .btn-desconectar:hover { background-color: #ff4444; color: #ffffff; }
         .btn-error { background-color: #ff4444; color: #ffffff; }
-
-        /* CLASES DINÁMICAS PARA PANELES Y TEXTOS */
-        .panel-conectado { 
-            animation: respiracionViva 3s infinite ease-in-out; 
-        }
-        .dato-conectado { color: #00ff88; }
-        
-        .panel-desconectado { border-left-color: #ff4444; box-shadow: none; animation: none; }
-        .dato-desconectado { color: #ff4444; }
     </style>
 </head>
 <body>
@@ -81,19 +95,28 @@
     
     <button id="btnMaestro" class="btn-standby">Conectar al Equipo</button>
 
-    <div class="panel" id="panelSistema">
-        <strong>Sistema IA:</strong>
-        <span class="dato" id="valSistema">Esperando vinculación...</span>
+    <div class="panel">
+        <div class="led" id="ledSistema"></div>
+        <div class="info-container">
+            <strong>Sistema IA:</strong>
+            <span class="dato" id="valSistema">Esperando vinculación...</span>
+        </div>
     </div>
 
-    <div class="panel" id="panelRed">
-        <strong>Estado de Red:</strong>
-        <span class="dato" id="valRed">Esperando vinculación...</span>
+    <div class="panel">
+        <div class="led" id="ledRed"></div>
+        <div class="info-container">
+            <strong>Estado de Red:</strong>
+            <span class="dato" id="valRed">Esperando vinculación...</span>
+        </div>
     </div>
 
-    <div class="panel" id="panelLog">
-        <strong>Última Transmisión:</strong>
-        <span class="dato" id="valLog">Esperando vinculación...</span>
+    <div class="panel">
+        <div class="led" id="ledLog"></div>
+        <div class="info-container">
+            <strong>Última Transmisión:</strong>
+            <span class="dato" id="valLog">Esperando vinculación...</span>
+        </div>
     </div>
 
     <script>
@@ -104,64 +127,53 @@
 
         let dispositivoBluetooth;
 
-        // Función: UI cuando está conectado y transmitiendo
-        function UI_Conectado() {
-            const btn = document.getElementById('btnMaestro');
-            btn.innerHTML = "⏹ Desconectar Equipo";
-            btn.className = "btn-desconectar";
+        // EL CEREBRO DE LOS LEDs: Analiza el texto y decide el color
+        function actualizarEstadoVisual(idTexto, idLed, textoCrudo) {
+            document.getElementById(idTexto).innerText = textoCrudo;
+            
+            const led = document.getElementById(idLed);
+            const str = textoCrudo.toUpperCase();
+            
+            // Limpiamos clases anteriores
+            led.className = "led"; 
 
-            document.querySelectorAll('.panel').forEach(p => {
-                p.classList.remove('panel-desconectado');
-                p.classList.add('panel-conectado'); // Activa la animación de respiración
-            });
-
-            document.querySelectorAll('.dato').forEach(d => {
-                d.classList.remove('dato-desconectado');
-                d.classList.add('dato-conectado');
-            });
+            if (str.includes("[OK]") || str.includes("[EXITO]")) {
+                led.classList.add("led-verde");
+            } else if (str.includes("[ERROR]") || str.includes("[FALLA]") || str.includes("[ABORTO]")) {
+                led.classList.add("led-rojo");
+            } else if (str.includes("[ESPERA]")) {
+                led.classList.add("led-amarillo");
+            } else {
+                led.classList.add("led-apagado"); // Si no reconoce el código, lo apaga
+            }
         }
 
-        // Función: UI cuando el enlace se rompe o se desconecta intencionalmente
+        // Función cuando se pierde la conexión bluetooth general
         function UI_Desconectado(mensajeBoton = "Conectar al Equipo", esError = false) {
             const btn = document.getElementById('btnMaestro');
             btn.innerHTML = mensajeBoton;
             btn.className = esError ? "btn-error" : "btn-standby";
 
-            document.getElementById('valSistema').innerText = "--- ENLACE CERRADO ---";
-            document.getElementById('valRed').innerText = "--- ENLACE CERRADO ---";
-            document.getElementById('valLog').innerText = "--- ENLACE CERRADO ---";
-
-            document.querySelectorAll('.panel').forEach(p => {
-                p.classList.remove('panel-conectado');
-                p.classList.add('panel-desconectado'); // Detiene animación, pone rojo
-            });
-
-            document.querySelectorAll('.dato').forEach(d => {
-                d.classList.remove('dato-conectado');
-                d.classList.add('dato-desconectado');
-            });
+            // Al desconectarse físicamente, forzamos todos los LEDs a ROJO ALERTA
+            actualizarEstadoVisual('valSistema', 'ledSistema', "[ERROR] ENLACE CERRADO");
+            actualizarEstadoVisual('valRed', 'ledRed', "[ERROR] ENLACE CERRADO");
+            actualizarEstadoVisual('valLog', 'ledLog', "[ERROR] ENLACE CERRADO");
         }
 
-        // Evento que salta si el equipo se apaga o el usuario se aleja
         function manejarCaidaDeRed(event) {
             console.log("Conexión Bluetooth rota físicamente.");
             UI_Desconectado("Conexión Perdida - Reconectar", true);
         }
 
-        // Lógica del Botón Maestro (Toggle: Conecta y Desconecta)
         document.getElementById('btnMaestro').addEventListener('click', async () => {
             
-            // 1. SI YA ESTÁ CONECTADO -> EJECUTAMOS DESCONEXIÓN MANUAL
             if (dispositivoBluetooth && dispositivoBluetooth.gatt.connected) {
-                console.log("Desconectando a petición del usuario...");
                 dispositivoBluetooth.gatt.disconnect();
-                UI_Desconectado("Conectar al Equipo", false); // Volvemos a estado neutral
-                return; // Salimos de la función, no intentamos conectar
+                UI_Desconectado("Conectar al Equipo", false); 
+                return; 
             }
 
-            // 2. SI NO ESTÁ CONECTADO -> INICIAMOS PROTOCOLO DE CONEXIÓN
             try {
-                // Pedimos el dispositivo
                 const device = await navigator.bluetooth.requestDevice({
                     filters: [{ services: [SERVICE_UUID] }]
                 });
@@ -169,7 +181,6 @@
                 dispositivoBluetooth = device;
                 dispositivoBluetooth.addEventListener('gattserverdisconnected', manejarCaidaDeRed);
 
-                // Cambiamos UI a fase de negociación
                 const btn = document.getElementById('btnMaestro');
                 btn.innerHTML = "⏳ Negociando enlace...";
                 btn.className = "btn-conectando";
@@ -185,24 +196,25 @@
                 await charRed.startNotifications();
                 await charLog.startNotifications();
 
-                // Callbacks para actualización en tiempo real
+                // Callbacks que procesan los datos con el nuevo cerebro de colores
                 charSistema.addEventListener('characteristicvaluechanged', (e) => {
-                    document.getElementById('valSistema').innerText = new TextDecoder().decode(e.target.value);
+                    actualizarEstadoVisual('valSistema', 'ledSistema', new TextDecoder().decode(e.target.value));
                 });
                 charRed.addEventListener('characteristicvaluechanged', (e) => {
-                    document.getElementById('valRed').innerText = new TextDecoder().decode(e.target.value);
+                    actualizarEstadoVisual('valRed', 'ledRed', new TextDecoder().decode(e.target.value));
                 });
                 charLog.addEventListener('characteristicvaluechanged', (e) => {
-                    document.getElementById('valLog').innerText = new TextDecoder().decode(e.target.value);
+                    actualizarEstadoVisual('valLog', 'ledLog', new TextDecoder().decode(e.target.value));
                 });
 
-                // Lectura inicial del buffer
-                document.getElementById('valSistema').innerText = new TextDecoder().decode(await charSistema.readValue());
-                document.getElementById('valRed').innerText = new TextDecoder().decode(await charRed.readValue());
-                document.getElementById('valLog').innerText = new TextDecoder().decode(await charLog.readValue());
+                // Lectura Inicial
+                actualizarEstadoVisual('valSistema', 'ledSistema', new TextDecoder().decode(await charSistema.readValue()));
+                actualizarEstadoVisual('valRed', 'ledRed', new TextDecoder().decode(await charRed.readValue()));
+                actualizarEstadoVisual('valLog', 'ledLog', new TextDecoder().decode(await charLog.readValue()));
 
-                // Éxito: Activamos la interfaz de monitoreo vivo
-                UI_Conectado();
+                // Cambiamos el botón maestro a modo Desconexión
+                btn.innerHTML = "⏹ Desconectar Equipo";
+                btn.className = "btn-desconectar";
 
             } catch (error) {
                 console.error("Fallo de negociación BLE:", error);
