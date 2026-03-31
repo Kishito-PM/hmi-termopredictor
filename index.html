@@ -11,17 +11,25 @@
             color: #ffffff; 
             padding: 20px; 
         }
+        
+        /* ESTADO POR DEFECTO (STANDBY - GRIS) */
         .panel { 
             background-color: #1e1e1e; 
             border-radius: 8px; 
             padding: 20px; 
             margin-top: 20px; 
-            border-left: 5px solid #00ff88; 
+            border-left: 5px solid #555555; /* Borde Gris */
             transition: border-left-color 0.3s;
         }
+        .dato { 
+            font-family: monospace; 
+            color: #aaaaaa; /* Texto Gris */
+            font-size: 1.2em; 
+            display: block; 
+            margin-top: 5px; 
+            transition: color 0.3s;
+        }
         button { 
-            background-color: #00ff88; 
-            color: #000; 
             border: none; 
             padding: 15px 30px; 
             font-size: 18px; 
@@ -29,16 +37,19 @@
             cursor: pointer; 
             width: 100%; 
             font-weight: bold; 
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, color 0.3s;
         }
-        .dato { 
-            font-family: monospace; 
-            color: #00ff88; 
-            font-size: 1.2em; 
-            display: block; 
-            margin-top: 5px; 
-        }
-        /* Clases CSS para el estado de desconexión */
+
+        /* CLASES DINÁMICAS PARA LOS BOTONES */
+        .btn-standby { background-color: #444444; color: #ffffff; }
+        .btn-conectando { background-color: #00aaff; color: #ffffff; } /* Azul al conectar */
+        .btn-conectado { background-color: #00ff88; color: #000000; }
+        .btn-desconectado { background-color: #ff4444; color: #ffffff; }
+
+        /* CLASES DINÁMICAS PARA PANELES Y TEXTOS (VERDE Y ROJO) */
+        .panel-conectado { border-left-color: #00ff88; }
+        .dato-conectado { color: #00ff88; }
+        
         .panel-desconectado { border-left-color: #ff4444; }
         .dato-desconectado { color: #ff4444; }
     </style>
@@ -46,21 +57,21 @@
 <body>
 
     <h2>⚡ Diagnóstico Industrial BLE</h2>
-    <button id="btnConectar">Conectar al Equipo</button>
+    <button id="btnConectar" class="btn-standby">Conectar al Equipo</button>
 
     <div class="panel" id="panelSistema">
         <strong>Sistema IA:</strong>
-        <span class="dato" id="valSistema">Esperando conexión...</span>
+        <span class="dato" id="valSistema">Esperando vinculación...</span>
     </div>
 
     <div class="panel" id="panelRed">
         <strong>Estado de Red:</strong>
-        <span class="dato" id="valRed">Esperando conexión...</span>
+        <span class="dato" id="valRed">Esperando vinculación...</span>
     </div>
 
     <div class="panel" id="panelLog">
         <strong>Última Transmisión:</strong>
-        <span class="dato" id="valLog">Esperando conexión...</span>
+        <span class="dato" id="valLog">Esperando vinculación...</span>
     </div>
 
     <script>
@@ -71,59 +82,65 @@
 
         let dispositivoBluetooth;
 
-        // Función que se dispara cuando se pierde la conexión
+        // Función: Pinta la UI de Verde cuando la conexión es exitosa
+        function marcarComoConectado() {
+            const btn = document.getElementById('btnConectar');
+            btn.innerText = "Conectado y Monitoreando";
+            btn.className = "btn-conectado"; // Asigna clase CSS verde
+
+            document.querySelectorAll('.panel').forEach(p => {
+                p.classList.remove('panel-desconectado');
+                p.classList.add('panel-conectado');
+            });
+
+            document.querySelectorAll('.dato').forEach(d => {
+                d.classList.remove('dato-desconectado');
+                d.classList.add('dato-conectado');
+            });
+        }
+
+        // Función: Pinta la UI de Rojo cuando se cae la conexión
         function manejarDesconexion(event) {
             console.log("Conexión Bluetooth perdida.");
             
-            // Cambiar aspecto del botón
             const btn = document.getElementById('btnConectar');
             btn.innerText = "Conexión Perdida - Toca para Reconectar";
-            btn.style.backgroundColor = "#ff4444";
-            btn.style.color = "#ffffff";
+            btn.className = "btn-desconectado"; // Asigna clase CSS roja
 
-            // Actualizar textos a estado de error
             document.getElementById('valSistema').innerText = "--- ENLACE PERDIDO ---";
             document.getElementById('valRed').innerText = "--- ENLACE PERDIDO ---";
             document.getElementById('valLog').innerText = "--- ENLACE PERDIDO ---";
 
-            // Cambiar colores de los paneles a rojo
-            const paneles = document.querySelectorAll('.panel');
-            const datos = document.querySelectorAll('.dato');
-            paneles.forEach(p => p.classList.add('panel-desconectado'));
-            datos.forEach(d => d.classList.add('dato-desconectado'));
+            document.querySelectorAll('.panel').forEach(p => {
+                p.classList.remove('panel-conectado');
+                p.classList.add('panel-desconectado');
+            });
+
+            document.querySelectorAll('.dato').forEach(d => {
+                d.classList.remove('dato-conectado');
+                d.classList.add('dato-desconectado');
+            });
         }
 
-        // Función para restaurar los colores al conectar
-        function restaurarUI() {
-            const paneles = document.querySelectorAll('.panel');
-            const datos = document.querySelectorAll('.dato');
-            paneles.forEach(p => p.classList.remove('panel-desconectado'));
-            datos.forEach(d => d.classList.remove('dato-desconectado'));
-            
-            const btn = document.getElementById('btnConectar');
-            btn.style.backgroundColor = "#555";
-            btn.style.color = "#00ff88";
-        }
-
+        // Lógica principal al presionar el botón
         document.getElementById('btnConectar').addEventListener('click', async () => {
             try {
-                // Si ya había un dispositivo conectado, nos aseguramos de limpiarlo
                 if (dispositivoBluetooth && dispositivoBluetooth.gatt.connected) {
                     dispositivoBluetooth.gatt.disconnect();
                 }
 
+                // 1. Fase de Búsqueda
                 const device = await navigator.bluetooth.requestDevice({
                     filters: [{ services: [SERVICE_UUID] }]
                 });
 
                 dispositivoBluetooth = device;
-
-                // ** AQUI AGREGAMOS EL DETECTOR DE DESCONEXIÓN **
                 dispositivoBluetooth.addEventListener('gattserverdisconnected', manejarDesconexion);
 
-                document.getElementById('btnConectar').innerText = "Conectando...";
-                document.getElementById('btnConectar').style.backgroundColor = "#00ff88";
-                document.getElementById('btnConectar').style.color = "#000";
+                // 2. Fase de Conexión (Botón se pone azul)
+                const btn = document.getElementById('btnConectar');
+                btn.innerText = "Negociando conexión...";
+                btn.className = "btn-conectando";
 
                 const server = await device.gatt.connect();
                 const service = await server.getPrimaryService(SERVICE_UUID);
@@ -132,6 +149,7 @@
                 const charRed = await service.getCharacteristic(CHAR_RED);
                 const charLog = await service.getCharacteristic(CHAR_LOG);
 
+                // 3. Suscripción a datos en vivo
                 await charSistema.startNotifications();
                 await charRed.startNotifications();
                 await charLog.startNotifications();
@@ -146,25 +164,24 @@
                     document.getElementById('valLog').innerText = new TextDecoder().decode(e.target.value);
                 });
 
-                // Leer valores iniciales
                 document.getElementById('valSistema').innerText = new TextDecoder().decode(await charSistema.readValue());
                 document.getElementById('valRed').innerText = new TextDecoder().decode(await charRed.readValue());
                 document.getElementById('valLog').innerText = new TextDecoder().decode(await charLog.readValue());
 
-                document.getElementById('btnConectar').innerText = "Conectado y Monitoreando";
-                restaurarUI();
+                // 4. Éxito absoluto: Pintar de verde
+                marcarComoConectado();
 
             } catch (error) {
                 console.error("Error de conexión:", error);
                 
-                // Solo mostrar alerta si no fue el usuario quien canceló el menú de emparejamiento
                 if (error.name !== 'NotFoundError') {
-                    alert("Error de conexión: " + error.message);
+                    alert("Falla de enlace: " + error.message);
                 }
                 
-                document.getElementById('btnConectar').innerText = "Reintentar Conexión";
-                document.getElementById('btnConectar').style.backgroundColor = "#ff4444";
-                document.getElementById('btnConectar').style.color = "#ffffff";
+                // Si falla la conexión, poner rojo el botón
+                const btn = document.getElementById('btnConectar');
+                btn.innerText = "Error - Reintentar Conexión";
+                btn.className = "btn-desconectado";
             }
         });
     </script>
