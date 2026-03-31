@@ -5,68 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HMI TermoPredictor V2</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background-color: #121212; 
-            color: #ffffff; 
-            padding: 20px; 
-        }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: #ffffff; padding: 20px; }
+        .panel { background-color: #1e1e1e; border-radius: 8px; padding: 15px 20px; margin-top: 15px; display: flex; align-items: center; border: 1px solid #333; }
         
-        .panel { 
-            background-color: #1e1e1e; 
-            border-radius: 8px; 
-            padding: 15px 20px; 
-            margin-top: 15px; 
-            display: flex; 
-            align-items: center; 
-            border: 1px solid #333; 
-        }
-        
-        /* RELOJ MAESTRO DE ANIMACIÓN SÍNCRONA */
         .led { 
-            width: 18px; 
-            height: 18px; 
-            border-radius: 50%; 
-            margin-right: 20px; 
-            flex-shrink: 0; 
+            width: 18px; height: 18px; border-radius: 50%; margin-right: 20px; flex-shrink: 0; 
             animation: latidoSincronizado 2s infinite ease-in-out;
             background-color: var(--color-brillo, #333);
             box-shadow: 0 0 2px var(--color-base, transparent);
         }
 
         @keyframes latidoSincronizado {
-            0%, 100% { 
-                background-color: var(--color-base, #333); 
-                box-shadow: 0 0 2px var(--color-base, transparent); 
-            }
-            50% { 
-                background-color: var(--color-brillo, #222); 
-                box-shadow: 0 0 15px var(--color-base, transparent); 
-            }
+            0%, 100% { background-color: var(--color-base, #333); box-shadow: 0 0 2px var(--color-base, transparent); }
+            50% { background-color: var(--color-brillo, #222); box-shadow: 0 0 15px var(--color-base, transparent); }
         }
 
-        /* PALETA DE COLORES DINÁMICA */
         .led-verde    { --color-base: #00ff88; --color-brillo: #008844; }
         .led-rojo     { --color-base: #ff4444; --color-brillo: #aa0000; }
         .led-amarillo { --color-base: #ffaa00; --color-brillo: #885500; }
-        .led-azul     { --color-base: #00aaff; --color-brillo: #004488; }
         .led-apagado  { --color-base: #333333; --color-brillo: #333333; } 
 
         .info-container { display: flex; flex-direction: column; }
         .dato { font-family: monospace; color: #dddddd; font-size: 1.1em; margin-top: 4px; }
-        
-        button { 
-            border: none; 
-            padding: 15px; 
-            font-size: 18px; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            width: 100%; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            margin-bottom: 10px; 
-            transition: all 0.3s;
-        }
+        button { border: none; padding: 15px; font-size: 18px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; transition: all 0.3s; }
         
         .btn-standby { background-color: #444444; color: #fff; }
         .btn-conectando { background-color: #00aaff; color: #fff; cursor: wait; }
@@ -81,42 +42,27 @@
 
     <div class="panel">
         <div class="led led-apagado" id="ledSistema"></div>
-        <div class="info-container">
-            <strong>Estatus IA:</strong>
-            <span class="dato" id="valSistema">--- STANDBY ---</span>
-        </div>
+        <div class="info-container"><strong>Estatus IA:</strong><span class="dato" id="valSistema">--- STANDBY ---</span></div>
     </div>
     
     <div class="panel">
         <div class="led led-apagado" id="ledRed"></div>
-        <div class="info-container">
-            <strong>WiFi / Nube:</strong>
-            <span class="dato" id="valRed">--- STANDBY ---</span>
-        </div>
+        <div class="info-container"><strong>WiFi / Nube:</strong><span class="dato" id="valRed">--- STANDBY ---</span></div>
     </div>
     
     <div class="panel">
         <div class="led led-apagado" id="ledCanal"></div>
-        <div class="info-container">
-            <strong>Canal de Datos (Ping):</strong>
-            <span class="dato" id="valCanal">--- STANDBY ---</span>
-        </div>
+        <div class="info-container"><strong>Canal de Datos (Ping):</strong><span class="dato" id="valCanal">--- STANDBY ---</span></div>
+    </div>
+
+    <div class="panel">
+        <div class="led led-apagado" id="ledSensor"></div>
+        <div class="info-container"><strong>Sensor Térmico:</strong><span class="dato" id="valSensor">--- STANDBY ---</span></div>
     </div>
     
     <div class="panel">
         <div class="led led-apagado" id="ledLog"></div>
-        <div class="info-container">
-            <strong>Último Envío WhatsApp:</strong>
-            <span class="dato" id="valLog">--- STANDBY ---</span>
-        </div>
-    </div>
-    
-    <div class="panel">
-        <div class="led led-apagado" id="ledTimer"></div>
-        <div class="info-container">
-            <strong>Cronómetro de Reporte:</strong>
-            <span class="dato" id="valTimer">--- STANDBY ---</span>
-        </div>
+        <div class="info-container"><strong>Último Envío WhatsApp:</strong><span class="dato" id="valLog">--- STANDBY ---</span></div>
     </div>
 
     <script>
@@ -126,14 +72,13 @@
             'valRed': '6e400003-b5a3-f393-e0a9-e50e24dcca9e',
             'valCanal': '6e400004-b5a3-f393-e0a9-e50e24dcca9e',
             'valLog': '6e400005-b5a3-f393-e0a9-e50e24dcca9e',
-            'valTimer': '6e400006-b5a3-f393-e0a9-e50e24dcca9e'
+            'valSensor': '6e400006-b5a3-f393-e0a9-e50e24dcca9e' // Reemplaza al cronómetro
         };
 
         let device = null;
         let isConnected = false; 
         const decoder = new TextDecoder();
 
-        // Parseador Visual (Asigna variables CSS)
         function parseVisual(idTexto, texto) {
             const el = document.getElementById(idTexto);
             if (!el) return;
@@ -142,59 +87,35 @@
             const led = el.parentElement.parentElement.querySelector('.led');
             const str = texto.toUpperCase();
             
-            led.className = "led"; // Reseteo limpio
+            led.className = "led"; 
 
             if (str.includes("[OK]") || str.includes("[EXITO]")) led.classList.add("led-verde");
-            else if (str.includes("[FALLA]") || str.includes("[ABORTO]") || str.includes("CERRADO")) led.classList.add("led-rojo");
+            else if (str.includes("[FALLA]") || str.includes("[ABORTO]") || str.includes("CERRADO") || str.includes("CRITICO")) led.classList.add("led-rojo");
             else if (str.includes("[ESPERA]")) led.classList.add("led-amarillo");
-            else if (str.includes("[TIMER]")) led.classList.add("led-azul");
-            else led.classList.add("led-apagado"); // Incluye "STANDBY"
+            else led.classList.add("led-apagado"); 
         }
 
-        // Función que gobierna la UI cuando se pierde o se cierra el enlace
         function UI_Desconectado(esError) {
             isConnected = false;
-            const btn = document.getElementById('btnMaestro');
-            btn.innerText = "CONECTAR AL EQUIPO";
-            btn.className = "btn-standby";
-            
-            // Si es error (se cayó la red), forzamos texto rojo. Si no (canceló), lo dejamos en gris.
+            document.getElementById('btnMaestro').innerText = "CONECTAR AL EQUIPO";
+            document.getElementById('btnMaestro').className = "btn-standby";
             const textoStatus = esError ? "[FALLA] ENLACE CERRADO" : "--- STANDBY ---";
-            
-            Object.keys(CHARS).forEach(id => {
-                try { parseVisual(id, textoStatus); } catch(e) {}
-            });
-            console.log("Estado de enlace cerrado.");
+            Object.keys(CHARS).forEach(id => { try { parseVisual(id, textoStatus); } catch(e) {} });
         }
 
-        // Evento nativo de Chrome cuando se rompe la conexión física
-        function onDisconnected(event) {
-            console.log("¡Desconexión física detectada por el SO!");
-            UI_Desconectado(true); // Forzamos la Alerta Roja
-        }
+        function onDisconnected(event) { UI_Desconectado(true); }
 
         document.getElementById('btnMaestro').addEventListener('click', async () => {
-            
-            // 1. DESCONEXIÓN MANUAL
             if (isConnected && device && device.gatt.connected) {
-                console.log("Desconectando manualmente...");
-                device.gatt.disconnect(); // Esto dispara onDisconnected automáticamente
-                return; 
+                device.gatt.disconnect(); return; 
             }
-
-            // 2. CONEXIÓN NUEVA
             try {
                 const btn = document.getElementById('btnMaestro');
                 btn.innerText = "Buscando equipo...";
                 btn.className = "btn-conectando";
 
-                device = await navigator.bluetooth.requestDevice({ 
-                    filters: [{ services: [SERVICE_UUID] }] 
-                });
-
-                // Limpiamos listeners fantasmas por si el usuario conectó y desconectó varias veces
+                device = await navigator.bluetooth.requestDevice({ filters: [{ services: [SERVICE_UUID] }] });
                 device.removeEventListener('gattserverdisconnected', onDisconnected);
-                // Atamos el radar de caída de conexión
                 device.addEventListener('gattserverdisconnected', onDisconnected);
 
                 btn.innerText = "Negociando enlace...";
@@ -202,12 +123,10 @@
                 const server = await device.gatt.connect();
                 const service = await server.getPrimaryService(SERVICE_UUID);
 
-                // Suscripción a la telemetría
                 for (const id of Object.keys(CHARS)) {
                     const char = await service.getCharacteristic(CHARS[id]);
                     await char.startNotifications();
                     char.addEventListener('characteristicvaluechanged', (e) => parseVisual(id, decoder.decode(e.target.value)));
-                    
                     const val = await char.readValue();
                     parseVisual(id, decoder.decode(val));
                 }
@@ -217,14 +136,8 @@
                 btn.className = "btn-conectado";
 
             } catch (e) {
-                if (e.name === 'NotFoundError') {
-                    // El usuario le dio a "Cancelar" en la ventanita de Android. Regresamos a la normalidad sin pánico.
-                    console.log("Vinculación cancelada por el usuario.");
-                    UI_Desconectado(false); 
-                } else {
-                    alert("Falla crítica BLE: " + e.message);
-                    UI_Desconectado(true);
-                }
+                if (e.name !== 'NotFoundError') UI_Desconectado(true);
+                else UI_Desconectado(false);
             }
         });
     </script>
