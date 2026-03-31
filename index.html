@@ -32,7 +32,6 @@
     </div>
 
     <script>
-        // Los UUIDs deben estar en minúsculas en JavaScript
         const SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
         const CHAR_SISTEMA = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
         const CHAR_RED     = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
@@ -40,29 +39,24 @@
 
         document.getElementById('btnConectar').addEventListener('click', async () => {
             try {
-                // 1. El navegador pide permiso al usuario para usar el Bluetooth
+                // Filtro estricto: Buscamos por el UUID en lugar del nombre
                 const device = await navigator.bluetooth.requestDevice({
-                    filters: [{ name: 'TERMOPREDICTOR' }],
-                    optionalServices: [SERVICE_UUID]
+                    filters: [{ services: [SERVICE_UUID] }]
                 });
 
                 document.getElementById('btnConectar').innerText = "Conectando...";
 
-                // 2. Conectar al servidor GATT del Photon 2
                 const server = await device.gatt.connect();
                 const service = await server.getPrimaryService(SERVICE_UUID);
 
-                // 3. Obtener las características (los "renglones")
                 const charSistema = await service.getCharacteristic(CHAR_SISTEMA);
                 const charRed = await service.getCharacteristic(CHAR_RED);
                 const charLog = await service.getCharacteristic(CHAR_LOG);
 
-                // 4. Suscribirse a las notificaciones (Actualización en tiempo real)
                 await charSistema.startNotifications();
                 await charRed.startNotifications();
                 await charLog.startNotifications();
 
-                // 5. Mostrar los datos en la pantalla
                 charSistema.addEventListener('characteristicvaluechanged', (e) => {
                     document.getElementById('valSistema').innerText = new TextDecoder().decode(e.target.value);
                 });
@@ -73,7 +67,6 @@
                     document.getElementById('valLog').innerText = new TextDecoder().decode(e.target.value);
                 });
 
-                // Leer los valores iniciales una vez
                 document.getElementById('valSistema').innerText = new TextDecoder().decode(await charSistema.readValue());
                 document.getElementById('valRed').innerText = new TextDecoder().decode(await charRed.readValue());
                 document.getElementById('valLog').innerText = new TextDecoder().decode(await charLog.readValue());
