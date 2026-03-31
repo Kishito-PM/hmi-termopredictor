@@ -12,18 +12,18 @@
             padding: 20px; 
         }
         
-        /* ESTADO POR DEFECTO (STANDBY - GRIS) */
+        /* ESTADO POR DEFECTO (STANDBY) */
         .panel { 
             background-color: #1e1e1e; 
             border-radius: 8px; 
             padding: 20px; 
             margin-top: 20px; 
-            border-left: 5px solid #555555; /* Borde Gris */
-            transition: border-left-color 0.3s;
+            border-left: 5px solid #555555; 
+            transition: all 0.3s ease;
         }
         .dato { 
             font-family: monospace; 
-            color: #aaaaaa; /* Texto Gris */
+            color: #aaaaaa; 
             font-size: 1.2em; 
             display: block; 
             margin-top: 5px; 
@@ -37,27 +37,49 @@
             cursor: pointer; 
             width: 100%; 
             font-weight: bold; 
-            transition: background-color 0.3s, color 0.3s;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ANIMACIÓN DE RESPIRACIÓN (COMO EL LED DE PARTICLE) */
+        @keyframes respiracionViva {
+            0% { 
+                border-left-color: #00ff88; 
+                box-shadow: -5px 0 15px -5px rgba(0, 255, 136, 0.1); 
+            }
+            50% { 
+                border-left-color: #006633; 
+                box-shadow: -5px 0 25px -5px rgba(0, 255, 136, 0.6); 
+            }
+            100% { 
+                border-left-color: #00ff88; 
+                box-shadow: -5px 0 15px -5px rgba(0, 255, 136, 0.1); 
+            }
         }
 
         /* CLASES DINÁMICAS PARA LOS BOTONES */
         .btn-standby { background-color: #444444; color: #ffffff; }
-        .btn-conectando { background-color: #00aaff; color: #ffffff; } /* Azul al conectar */
-        .btn-conectado { background-color: #00ff88; color: #000000; }
-        .btn-desconectado { background-color: #ff4444; color: #ffffff; }
+        .btn-conectando { background-color: #00aaff; color: #ffffff; cursor: wait; }
+        .btn-desconectar { background-color: #2a2a2a; color: #ff4444; border: 1px solid #ff4444; }
+        .btn-desconectar:hover { background-color: #ff4444; color: #ffffff; }
+        .btn-error { background-color: #ff4444; color: #ffffff; }
 
-        /* CLASES DINÁMICAS PARA PANELES Y TEXTOS (VERDE Y ROJO) */
-        .panel-conectado { border-left-color: #00ff88; }
+        /* CLASES DINÁMICAS PARA PANELES Y TEXTOS */
+        .panel-conectado { 
+            animation: respiracionViva 3s infinite ease-in-out; 
+        }
         .dato-conectado { color: #00ff88; }
         
-        .panel-desconectado { border-left-color: #ff4444; }
+        .panel-desconectado { border-left-color: #ff4444; box-shadow: none; animation: none; }
         .dato-desconectado { color: #ff4444; }
     </style>
 </head>
 <body>
 
     <h2>⚡ Diagnóstico Industrial BLE</h2>
-    <button id="btnConectar" class="btn-standby">Conectar al Equipo</button>
+    
+    <button id="btnMaestro" class="btn-standby">Conectar al Equipo</button>
 
     <div class="panel" id="panelSistema">
         <strong>Sistema IA:</strong>
@@ -82,15 +104,15 @@
 
         let dispositivoBluetooth;
 
-        // Función: Pinta la UI de Verde cuando la conexión es exitosa
-        function marcarComoConectado() {
-            const btn = document.getElementById('btnConectar');
-            btn.innerText = "Conectado y Monitoreando";
-            btn.className = "btn-conectado"; // Asigna clase CSS verde
+        // Función: UI cuando está conectado y transmitiendo
+        function UI_Conectado() {
+            const btn = document.getElementById('btnMaestro');
+            btn.innerHTML = "⏹ Desconectar Equipo";
+            btn.className = "btn-desconectar";
 
             document.querySelectorAll('.panel').forEach(p => {
                 p.classList.remove('panel-desconectado');
-                p.classList.add('panel-conectado');
+                p.classList.add('panel-conectado'); // Activa la animación de respiración
             });
 
             document.querySelectorAll('.dato').forEach(d => {
@@ -99,21 +121,19 @@
             });
         }
 
-        // Función: Pinta la UI de Rojo cuando se cae la conexión
-        function manejarDesconexion(event) {
-            console.log("Conexión Bluetooth perdida.");
-            
-            const btn = document.getElementById('btnConectar');
-            btn.innerText = "Conexión Perdida - Toca para Reconectar";
-            btn.className = "btn-desconectado"; // Asigna clase CSS roja
+        // Función: UI cuando el enlace se rompe o se desconecta intencionalmente
+        function UI_Desconectado(mensajeBoton = "Conectar al Equipo", esError = false) {
+            const btn = document.getElementById('btnMaestro');
+            btn.innerHTML = mensajeBoton;
+            btn.className = esError ? "btn-error" : "btn-standby";
 
-            document.getElementById('valSistema').innerText = "--- ENLACE PERDIDO ---";
-            document.getElementById('valRed').innerText = "--- ENLACE PERDIDO ---";
-            document.getElementById('valLog').innerText = "--- ENLACE PERDIDO ---";
+            document.getElementById('valSistema').innerText = "--- ENLACE CERRADO ---";
+            document.getElementById('valRed').innerText = "--- ENLACE CERRADO ---";
+            document.getElementById('valLog').innerText = "--- ENLACE CERRADO ---";
 
             document.querySelectorAll('.panel').forEach(p => {
                 p.classList.remove('panel-conectado');
-                p.classList.add('panel-desconectado');
+                p.classList.add('panel-desconectado'); // Detiene animación, pone rojo
             });
 
             document.querySelectorAll('.dato').forEach(d => {
@@ -122,24 +142,36 @@
             });
         }
 
-        // Lógica principal al presionar el botón
-        document.getElementById('btnConectar').addEventListener('click', async () => {
-            try {
-                if (dispositivoBluetooth && dispositivoBluetooth.gatt.connected) {
-                    dispositivoBluetooth.gatt.disconnect();
-                }
+        // Evento que salta si el equipo se apaga o el usuario se aleja
+        function manejarCaidaDeRed(event) {
+            console.log("Conexión Bluetooth rota físicamente.");
+            UI_Desconectado("Conexión Perdida - Reconectar", true);
+        }
 
-                // 1. Fase de Búsqueda
+        // Lógica del Botón Maestro (Toggle: Conecta y Desconecta)
+        document.getElementById('btnMaestro').addEventListener('click', async () => {
+            
+            // 1. SI YA ESTÁ CONECTADO -> EJECUTAMOS DESCONEXIÓN MANUAL
+            if (dispositivoBluetooth && dispositivoBluetooth.gatt.connected) {
+                console.log("Desconectando a petición del usuario...");
+                dispositivoBluetooth.gatt.disconnect();
+                UI_Desconectado("Conectar al Equipo", false); // Volvemos a estado neutral
+                return; // Salimos de la función, no intentamos conectar
+            }
+
+            // 2. SI NO ESTÁ CONECTADO -> INICIAMOS PROTOCOLO DE CONEXIÓN
+            try {
+                // Pedimos el dispositivo
                 const device = await navigator.bluetooth.requestDevice({
                     filters: [{ services: [SERVICE_UUID] }]
                 });
 
                 dispositivoBluetooth = device;
-                dispositivoBluetooth.addEventListener('gattserverdisconnected', manejarDesconexion);
+                dispositivoBluetooth.addEventListener('gattserverdisconnected', manejarCaidaDeRed);
 
-                // 2. Fase de Conexión (Botón se pone azul)
-                const btn = document.getElementById('btnConectar');
-                btn.innerText = "Negociando conexión...";
+                // Cambiamos UI a fase de negociación
+                const btn = document.getElementById('btnMaestro');
+                btn.innerHTML = "⏳ Negociando enlace...";
                 btn.className = "btn-conectando";
 
                 const server = await device.gatt.connect();
@@ -149,11 +181,11 @@
                 const charRed = await service.getCharacteristic(CHAR_RED);
                 const charLog = await service.getCharacteristic(CHAR_LOG);
 
-                // 3. Suscripción a datos en vivo
                 await charSistema.startNotifications();
                 await charRed.startNotifications();
                 await charLog.startNotifications();
 
+                // Callbacks para actualización en tiempo real
                 charSistema.addEventListener('characteristicvaluechanged', (e) => {
                     document.getElementById('valSistema').innerText = new TextDecoder().decode(e.target.value);
                 });
@@ -164,24 +196,22 @@
                     document.getElementById('valLog').innerText = new TextDecoder().decode(e.target.value);
                 });
 
+                // Lectura inicial del buffer
                 document.getElementById('valSistema').innerText = new TextDecoder().decode(await charSistema.readValue());
                 document.getElementById('valRed').innerText = new TextDecoder().decode(await charRed.readValue());
                 document.getElementById('valLog').innerText = new TextDecoder().decode(await charLog.readValue());
 
-                // 4. Éxito absoluto: Pintar de verde
-                marcarComoConectado();
+                // Éxito: Activamos la interfaz de monitoreo vivo
+                UI_Conectado();
 
             } catch (error) {
-                console.error("Error de conexión:", error);
+                console.error("Fallo de negociación BLE:", error);
                 
                 if (error.name !== 'NotFoundError') {
                     alert("Falla de enlace: " + error.message);
                 }
                 
-                // Si falla la conexión, poner rojo el botón
-                const btn = document.getElementById('btnConectar');
-                btn.innerText = "Error - Reintentar Conexión";
-                btn.className = "btn-desconectado";
+                UI_Desconectado("Error - Reintentar Conexión", true);
             }
         });
     </script>
