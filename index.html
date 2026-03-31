@@ -3,228 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HMI TermoPredictor</title>
+    <title>HMI TermoPredictor V2</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #121212; 
-            color: #ffffff; 
-            padding: 20px; 
-        }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: #ffffff; padding: 20px; }
+        .panel { background-color: #1e1e1e; border-radius: 8px; padding: 15px 20px; margin-top: 15px; display: flex; align-items: center; border: 1px solid #333; }
+        .led { width: 18px; height: 18px; border-radius: 50%; margin-right: 20px; background-color: #333; flex-shrink: 0; }
         
-        /* CONTENEDOR DE CADA RENGLÓN */
-        .panel { 
-            background-color: #1e1e1e; 
-            border-radius: 8px; 
-            padding: 15px 20px; 
-            margin-top: 20px; 
-            display: flex; /* Alineación horizontal */
-            align-items: center; 
-            border: 1px solid #333;
-        }
+        @keyframes latidoVerde { 0%, 100% { background-color: #00ff88; box-shadow: 0 0 2px #00ff88; } 50% { background-color: #008844; box-shadow: 0 0 15px #00ff88; } }
+        @keyframes latidoRojo { 0%, 100% { background-color: #ff4444; box-shadow: 0 0 2px #ff4444; } 50% { background-color: #aa0000; box-shadow: 0 0 15px #ff4444; } }
+        @keyframes latidoAmarillo { 0%, 100% { background-color: #ffaa00; box-shadow: 0 0 2px #ffaa00; } 50% { background-color: #885500; box-shadow: 0 0 15px #ffaa00; } }
+        @keyframes latidoAzul { 0%, 100% { background-color: #00aaff; box-shadow: 0 0 2px #00aaff; } 50% { background-color: #004488; box-shadow: 0 0 10px #00aaff; } }
 
-        /* DISEÑO DE LOS LEDs CIRCULARES */
-        .led {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            margin-right: 20px;
-            background-color: #333; /* Apagado por defecto */
-            box-shadow: inset 0px 0px 5px #000;
-            flex-shrink: 0;
-        }
+        .led-verde { animation: latidoVerde 2s infinite; }
+        .led-rojo { animation: latidoRojo 1s infinite; }
+        .led-amarillo { animation: latidoAmarillo 2s infinite; }
+        .led-azul { animation: latidoAzul 2s infinite; }
 
-        /* ANIMACIONES DE RESPIRACIÓN INDEPENDIENTES */
-        @keyframes latidoVerde {
-            0% { background-color: #00ff88; box-shadow: 0 0 2px #00ff88; }
-            50% { background-color: #008844; box-shadow: 0 0 15px #00ff88; }
-            100% { background-color: #00ff88; box-shadow: 0 0 2px #00ff88; }
-        }
-        @keyframes latidoRojo {
-            0% { background-color: #ff4444; box-shadow: 0 0 2px #ff4444; }
-            50% { background-color: #aa0000; box-shadow: 0 0 15px #ff4444; }
-            100% { background-color: #ff4444; box-shadow: 0 0 2px #ff4444; }
-        }
-        @keyframes latidoAmarillo {
-            0% { background-color: #ffaa00; box-shadow: 0 0 2px #ffaa00; }
-            50% { background-color: #885500; box-shadow: 0 0 15px #ffaa00; }
-            100% { background-color: #ffaa00; box-shadow: 0 0 2px #ffaa00; }
-        }
-
-        /* CLASES PARA ACTIVAR LOS LEDs */
-        .led-verde { animation: latidoVerde 2s infinite ease-in-out; }
-        .led-rojo { animation: latidoRojo 1s infinite ease-in-out; } /* Rojo late más rápido (Alerta) */
-        .led-amarillo { animation: latidoAmarillo 2s infinite ease-in-out; }
-        .led-apagado { animation: none; background-color: #333; box-shadow: inset 0px 0px 5px #000; }
-
-        /* TEXTOS */
-        .info-container {
-            display: flex;
-            flex-direction: column;
-        }
-        .dato { 
-            font-family: monospace; 
-            color: #dddddd; 
-            font-size: 1.1em; 
-            margin-top: 4px; 
-        }
-
-        /* BOTÓN MAESTRO */
-        button { 
-            border: none; 
-            padding: 15px 30px; 
-            font-size: 18px; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            width: 100%; 
-            font-weight: bold; 
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-        }
-        .btn-standby { background-color: #444444; color: #ffffff; }
-        .btn-conectando { background-color: #00aaff; color: #ffffff; cursor: wait; }
-        .btn-desconectar { background-color: #2a2a2a; color: #ff4444; border: 1px solid #ff4444; }
-        .btn-error { background-color: #ff4444; color: #ffffff; }
+        .info-container { display: flex; flex-direction: column; }
+        .dato { font-family: monospace; color: #dddddd; font-size: 1.1em; margin-top: 4px; }
+        button { border: none; padding: 15px; font-size: 18px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; }
+        .btn-standby { background-color: #444444; color: #fff; }
+        .btn-conectado { background-color: #2a2a2a; color: #ff4444; border: 1px solid #ff4444; }
     </style>
 </head>
 <body>
-
-    <h2>⚡ Diagnóstico Industrial BLE</h2>
-    
+    <h2>⚡ Diagnóstico Industrial</h2>
     <button id="btnMaestro" class="btn-standby">Conectar al Equipo</button>
 
-    <div class="panel">
-        <div class="led" id="ledSistema"></div>
-        <div class="info-container">
-            <strong>Sistema IA:</strong>
-            <span class="dato" id="valSistema">Esperando vinculación...</span>
-        </div>
-    </div>
-
-    <div class="panel">
-        <div class="led" id="ledRed"></div>
-        <div class="info-container">
-            <strong>Estado de Red:</strong>
-            <span class="dato" id="valRed">Esperando vinculación...</span>
-        </div>
-    </div>
-
-    <div class="panel">
-        <div class="led" id="ledLog"></div>
-        <div class="info-container">
-            <strong>Última Transmisión:</strong>
-            <span class="dato" id="valLog">Esperando vinculación...</span>
-        </div>
-    </div>
+    <div class="panel"><div class="led" id="ledSistema"></div><div class="info-container"><strong>Estatus IA:</strong><span class="dato" id="valSistema">---</span></div></div>
+    <div class="panel"><div class="led" id="ledRed"></div><div class="info-container"><strong>WiFi / Nube:</strong><span class="dato" id="valRed">---</span></div></div>
+    <div class="panel"><div class="led" id="ledCanal"></div><div class="info-container"><strong>Canal de Datos (Ping):</strong><span class="dato" id="valCanal">---</span></div></div>
+    <div class="panel"><div class="led" id="ledLog"></div><div class="info-container"><strong>Último Envío WhatsApp:</strong><span class="dato" id="valLog">---</span></div></div>
+    <div class="panel"><div class="led" id="ledTimer"></div><div class="info-container"><strong>Cronómetro de Reporte:</strong><span class="dato" id="valTimer">---</span></div></div>
 
     <script>
         const SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
-        const CHAR_SISTEMA = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
-        const CHAR_RED     = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-        const CHAR_LOG     = '6e400004-b5a3-f393-e0a9-e50e24dcca9e';
+        const CHARS = {
+            'valSistema': '6e400002-b5a3-f393-e0a9-e50e24dcca9e',
+            'valRed': '6e400003-b5a3-f393-e0a9-e50e24dcca9e',
+            'valCanal': '6e400004-b5a3-f393-e0a9-e50e24dcca9e',
+            'valLog': '6e400005-b5a3-f393-e0a9-e50e24dcca9e',
+            'valTimer': '6e400006-b5a3-f393-e0a9-e50e24dcca9e'
+        };
 
-        let dispositivoBluetooth;
+        let device;
+        const decoder = new TextDecoder();
 
-        // EL CEREBRO DE LOS LEDs: Analiza el texto y decide el color
-        function actualizarEstadoVisual(idTexto, idLed, textoCrudo) {
-            document.getElementById(idTexto).innerText = textoCrudo;
-            
-            const led = document.getElementById(idLed);
-            const str = textoCrudo.toUpperCase();
-            
-            // Limpiamos clases anteriores
-            led.className = "led"; 
+        function parseVisual(idTexto, texto) {
+            const el = document.getElementById(idTexto);
+            el.innerText = texto;
+            const led = el.parentElement.parentElement.querySelector('.led');
+            const str = texto.toUpperCase();
+            led.className = "led";
 
-            if (str.includes("[OK]") || str.includes("[EXITO]")) {
-                led.classList.add("led-verde");
-            } else if (str.includes("[ERROR]") || str.includes("[FALLA]") || str.includes("[ABORTO]")) {
-                led.classList.add("led-rojo");
-            } else if (str.includes("[ESPERA]")) {
-                led.classList.add("led-amarillo");
-            } else {
-                led.classList.add("led-apagado"); // Si no reconoce el código, lo apaga
-            }
-        }
-
-        // Función cuando se pierde la conexión bluetooth general
-        function UI_Desconectado(mensajeBoton = "Conectar al Equipo", esError = false) {
-            const btn = document.getElementById('btnMaestro');
-            btn.innerHTML = mensajeBoton;
-            btn.className = esError ? "btn-error" : "btn-standby";
-
-            // Al desconectarse físicamente, forzamos todos los LEDs a ROJO ALERTA
-            actualizarEstadoVisual('valSistema', 'ledSistema', "[ERROR] ENLACE CERRADO");
-            actualizarEstadoVisual('valRed', 'ledRed', "[ERROR] ENLACE CERRADO");
-            actualizarEstadoVisual('valLog', 'ledLog', "[ERROR] ENLACE CERRADO");
-        }
-
-        function manejarCaidaDeRed(event) {
-            console.log("Conexión Bluetooth rota físicamente.");
-            UI_Desconectado("Conexión Perdida - Reconectar", true);
+            if (str.includes("[OK]") || str.includes("[EXITO]")) led.classList.add("led-verde");
+            else if (str.includes("[FALLA]") || str.includes("[ABORTO]")) led.classList.add("led-rojo");
+            else if (str.includes("[ESPERA]")) led.classList.add("led-amarillo");
+            else if (str.includes("[TIMER]")) led.classList.add("led-azul");
         }
 
         document.getElementById('btnMaestro').addEventListener('click', async () => {
-            
-            if (dispositivoBluetooth && dispositivoBluetooth.gatt.connected) {
-                dispositivoBluetooth.gatt.disconnect();
-                UI_Desconectado("Conectar al Equipo", false); 
-                return; 
-            }
-
+            if (device && device.gatt.connected) { device.gatt.disconnect(); return; }
             try {
-                const device = await navigator.bluetooth.requestDevice({
-                    filters: [{ services: [SERVICE_UUID] }]
-                });
-
-                dispositivoBluetooth = device;
-                dispositivoBluetooth.addEventListener('gattserverdisconnected', manejarCaidaDeRed);
-
-                const btn = document.getElementById('btnMaestro');
-                btn.innerHTML = "⏳ Negociando enlace...";
-                btn.className = "btn-conectando";
-
+                device = await navigator.bluetooth.requestDevice({ filters: [{ services: [SERVICE_UUID] }] });
                 const server = await device.gatt.connect();
                 const service = await server.getPrimaryService(SERVICE_UUID);
 
-                const charSistema = await service.getCharacteristic(CHAR_SISTEMA);
-                const charRed = await service.getCharacteristic(CHAR_RED);
-                const charLog = await service.getCharacteristic(CHAR_LOG);
-
-                await charSistema.startNotifications();
-                await charRed.startNotifications();
-                await charLog.startNotifications();
-
-                // Callbacks que procesan los datos con el nuevo cerebro de colores
-                charSistema.addEventListener('characteristicvaluechanged', (e) => {
-                    actualizarEstadoVisual('valSistema', 'ledSistema', new TextDecoder().decode(e.target.value));
-                });
-                charRed.addEventListener('characteristicvaluechanged', (e) => {
-                    actualizarEstadoVisual('valRed', 'ledRed', new TextDecoder().decode(e.target.value));
-                });
-                charLog.addEventListener('characteristicvaluechanged', (e) => {
-                    actualizarEstadoVisual('valLog', 'ledLog', new TextDecoder().decode(e.target.value));
+                Object.keys(CHARS).forEach(async (id) => {
+                    const char = await service.getCharacteristic(CHARS[id]);
+                    await char.startNotifications();
+                    char.addEventListener('characteristicvaluechanged', (e) => parseVisual(id, decoder.decode(e.target.value)));
+                    parseVisual(id, decoder.decode(await char.readValue()));
                 });
 
-                // Lectura Inicial
-                actualizarEstadoVisual('valSistema', 'ledSistema', new TextDecoder().decode(await charSistema.readValue()));
-                actualizarEstadoVisual('valRed', 'ledRed', new TextDecoder().decode(await charRed.readValue()));
-                actualizarEstadoVisual('valLog', 'ledLog', new TextDecoder().decode(await charLog.readValue()));
-
-                // Cambiamos el botón maestro a modo Desconexión
-                btn.innerHTML = "⏹ Desconectar Equipo";
-                btn.className = "btn-desconectar";
-
-            } catch (error) {
-                console.error("Fallo de negociación BLE:", error);
-                
-                if (error.name !== 'NotFoundError') {
-                    alert("Falla de enlace: " + error.message);
-                }
-                
-                UI_Desconectado("Error - Reintentar Conexión", true);
-            }
+                document.getElementById('btnMaestro').innerText = "⏹ Desconectar";
+                document.getElementById('btnMaestro').className = "btn-conectado";
+            } catch (e) { alert("Error: " + e); }
         });
     </script>
 </body>
