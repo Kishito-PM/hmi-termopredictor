@@ -23,12 +23,13 @@
         .led-verde    { --color-base: #00ff88; --color-brillo: #008844; }
         .led-rojo     { --color-base: #ff4444; --color-brillo: #aa0000; }
         .led-amarillo { --color-base: #ffaa00; --color-brillo: #885500; }
+        .led-azul     { --color-base: #00aaff; --color-brillo: #004488; }
         .led-apagado  { --color-base: #333333; --color-brillo: #333333; } 
 
         .info-container { display: flex; flex-direction: column; }
         .dato { font-family: monospace; color: #dddddd; font-size: 1.1em; margin-top: 4px; }
-        button { border: none; padding: 15px; font-size: 18px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; transition: all 0.3s; }
         
+        button { border: none; padding: 15px; font-size: 18px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; transition: all 0.3s; }
         .btn-standby { background-color: #444444; color: #fff; }
         .btn-conectando { background-color: #00aaff; color: #fff; cursor: wait; }
         .btn-conectado { background-color: #2a2a2a; color: #ff4444; border: 1px solid #ff4444; }
@@ -57,7 +58,7 @@
 
     <div class="panel">
         <div class="led led-apagado" id="ledSensor"></div>
-        <div class="info-container"><strong>Sensor Térmico:</strong><span class="dato" id="valSensor">--- STANDBY ---</span></div>
+        <div class="info-container"><strong>Sensor Térmico (Simulador):</strong><span class="dato" id="valSensor">--- STANDBY ---</span></div>
     </div>
     
     <div class="panel">
@@ -72,7 +73,7 @@
             'valRed': '6e400003-b5a3-f393-e0a9-e50e24dcca9e',
             'valCanal': '6e400004-b5a3-f393-e0a9-e50e24dcca9e',
             'valLog': '6e400005-b5a3-f393-e0a9-e50e24dcca9e',
-            'valSensor': '6e400006-b5a3-f393-e0a9-e50e24dcca9e' // Reemplaza al cronómetro
+            'valSensor': '6e400006-b5a3-f393-e0a9-e50e24dcca9e' 
         };
 
         let device = null;
@@ -87,11 +88,13 @@
             const led = el.parentElement.parentElement.querySelector('.led');
             const str = texto.toUpperCase();
             
-            led.className = "led"; 
+            led.className = "led"; // Reseteo
 
+            // CEREBRO DE COLORES RE-SINCRONIZADO
             if (str.includes("[OK]") || str.includes("[EXITO]")) led.classList.add("led-verde");
-            else if (str.includes("[FALLA]") || str.includes("[ABORTO]") || str.includes("CERRADO") || str.includes("CRITICO")) led.classList.add("led-rojo");
+            else if (str.includes("[FALLA]") || str.includes("[ABORTO]") || str.includes("CERRADO")) led.classList.add("led-rojo");
             else if (str.includes("[ESPERA]")) led.classList.add("led-amarillo");
+            else if (str.includes("[TIMER]")) led.classList.add("led-azul"); // ¡Devuelto a la vida!
             else led.classList.add("led-apagado"); 
         }
 
@@ -106,9 +109,7 @@
         function onDisconnected(event) { UI_Desconectado(true); }
 
         document.getElementById('btnMaestro').addEventListener('click', async () => {
-            if (isConnected && device && device.gatt.connected) {
-                device.gatt.disconnect(); return; 
-            }
+            if (isConnected && device && device.gatt.connected) { device.gatt.disconnect(); return; }
             try {
                 const btn = document.getElementById('btnMaestro');
                 btn.innerText = "Buscando equipo...";
